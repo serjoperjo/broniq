@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Broniq — Вход</title>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Geologica:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0f0e;
+    --surface: #151918;
+    --border: #232a27;
+    --accent: #4fffb0;
+    --accent-dim: rgba(79,255,176,0.12);
+    --text: #e8ede9;
+    --muted: #6b7a72;
+    --error: #ff6b6b;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Geologica', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* Animated background */
+  .bg-noise {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      radial-gradient(ellipse 60% 50% at 20% 80%, rgba(79,255,176,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 80% 20%, rgba(79,255,176,0.04) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .grid-lines {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(79,255,176,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79,255,176,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+
+  /* Main card */
+  .card {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 420px;
+    padding: 48px 40px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Logo */
+  .logo {
+    font-family: 'Dela Gothic One', sans-serif;
+    font-size: 28px;
+    letter-spacing: -0.5px;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .tagline {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 36px;
+    letter-spacing: 0.01em;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab {
+    flex: 1;
+    padding: 10px 0;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'Geologica', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: color 0.2s;
+    position: relative;
+  }
+
+  .tab::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 0.2s;
+  }
+
+  .tab.active { color: var(--text); }
+  .tab.active::after { transform: scaleX(1); }
+
+  /* Form */
+  .form { display: flex; flex-direction: column; gap: 16px; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+
+  label {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'Geologica', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  input::placeholder { color: var(--muted); }
+
+  /* Button */
+  .btn {
+    margin-top: 8px;
+    padding: 14px;
+    background: var(--accent);
+    color: #0d0f0e;
+    border: none;
+    border-radius: 2px;
+    font-family: 'Dela Gothic One', sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+
+  .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* Messages */
+  .msg {
+    padding: 12px 14px;
+    border-radius: 2px;
+    font-size: 13px;
+    display: none;
+  }
+
+  .msg.error { background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3); color: var(--error); }
+  .msg.success { background: var(--accent-dim); border: 1px solid rgba(79,255,176,0.3); color: var(--accent); }
+  .msg.show { display: block; }
+
+  /* Divider */
+  .divider {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin: 4px 0;
+    position: relative;
+  }
+
+  /* Loading spinner */
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(13,15,14,0.3);
+    border-top-color: #0d0f0e;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Success screen */
+  .success-screen {
+    display: none;
+    text-align: center;
+    padding: 20px 0;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .success-screen.show { display: block; }
+
+  .success-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+
+  .success-screen h2 {
+    font-family: 'Dela Gothic One', sans-serif;
+    font-size: 20px;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .success-screen p {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .form-wrapper { transition: opacity 0.3s; }
+  .form-wrapper.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="bg-noise"></div>
+<div class="grid-lines"></div>
+
+<div class="card">
+  <div class="logo">Broniq</div>
+  <div class="tagline">Система бронирований для турбаз и глэмпингов</div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('login')">Войти</button>
+    <button class="tab" onclick="switchTab('register')">Регистрация</button>
+  </div>
+
+  <div class="form-wrapper" id="formWrapper">
+    <div id="msg" class="msg"></div>
+
+    <div class="form" id="loginForm">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="loginEmail" placeholder="your@email.com" />
+      </div>
+      <div class="field">
+        <label>Пароль</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" />
+      </div>
+      <button class="btn" id="loginBtn" onclick="handleLogin()">ВОЙТИ</button>
+    </div>
+
+    <div class="form" id="registerForm" style="display:none">
+      <div class="field">
+        <label>Название турбазы</label>
+        <input type="text" id="regName" placeholder="Глэмпинг на Алтае" />
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="regEmail" placeholder="your@email.com" />
+      </div>
+      <div class="field">
+        <label>Пароль</label>
+        <input type="password" id="regPassword" placeholder="минимум 6 символов" />
+      </div>
+      <button class="btn" id="registerBtn" onclick="handleRegister()">СОЗДАТЬ АККАУНТ</button>
+    </div>
+  </div>
+
+  <div class="success-screen" id="successScreen">
+    <div class="success-icon">✓</div>
+    <h2>Проверьте почту</h2>
+    <p>Мы отправили письмо с подтверждением на указанный email. Перейдите по ссылке в письме чтобы войти.</p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://itnkvsrsyjhowegkcfmi.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0bmt2c3JzeWpob3dlZ2tjZm1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMDAxODksImV4cCI6MjA5MDg3NjE4OX0.k7szA4lWUq9QQoxi40UMsvxjBgGFh8kGoZOHY4a2kPc';
+
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // Check if already logged in
+  sb.auth.getSession().then(({ data }) => {
+    if (data.session) {
+      window.location.href = 'dashboard.html';
+    }
+  });
+
+  let activeTab = 'login';
+
+  function switchTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'register'));
+    });
+    document.getElementById('loginForm').style.display = tab === 'login' ? 'flex' : 'none';
+    document.getElementById('registerForm').style.display = tab === 'register' ? 'flex' : 'none';
+    hideMsg();
+  }
+
+  function showMsg(text, type) {
+    const el = document.getElementById('msg');
+    el.textContent = text;
+    el.className = `msg ${type} show`;
+  }
+
+  function hideMsg() {
+    document.getElementById('msg').className = 'msg';
+  }
+
+  function setLoading(btnId, loading) {
+    const btn = document.getElementById(btnId);
+    if (loading) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Загрузка...';
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = btnId === 'loginBtn' ? 'ВОЙТИ' : 'СОЗДАТЬ АККАУНТ';
+    }
+  }
+
+  async function handleLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+
+    if (!email || !password) { showMsg('Заполните все поля', 'error'); return; }
+
+    setLoading('loginBtn', true);
+    hideMsg();
+
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      showMsg('Неверный email или пароль', 'error');
+      setLoading('loginBtn', false);
+    } else {
+      window.location.href = 'dashboard.html';
+    }
+  }
+
+  async function handleRegister() {
+    const name = document.getElementById('regName').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value;
+
+    if (!name || !email || !password) { showMsg('Заполните все поля', 'error'); return; }
+    if (password.length < 6) { showMsg('Пароль минимум 6 символов', 'error'); return; }
+
+    setLoading('registerBtn', true);
+    hideMsg();
+
+    const { error } = await sb.auth.signUp({
+      email, password,
+      options: { data: { business_name: name } }
+    });
+
+    if (error) {
+      showMsg(error.message === 'User already registered' ? 'Этот email уже зарегистрирован' : 'Ошибка регистрации', 'error');
+      setLoading('registerBtn', false);
+    } else {
+      document.getElementById('formWrapper').classList.add('hidden');
+      document.getElementById('successScreen').classList.add('show');
+    }
+  }
+
+  // Enter key support
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      if (activeTab === 'login') handleLogin();
+      else handleRegister();
+    }
+  });
+</script>
+</body>
+</html>

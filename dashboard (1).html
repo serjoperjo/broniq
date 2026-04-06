@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Broniq — Дашборд</title>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Geologica:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0f0e;
+    --surface: #151918;
+    --surface2: #1a1f1d;
+    --border: #232a27;
+    --accent: #4fffb0;
+    --accent-dim: rgba(79,255,176,0.10);
+    --text: #e8ede9;
+    --muted: #6b7a72;
+    --error: #ff6b6b;
+    --warning: #ffb84f;
+    --sidebar-w: 220px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Geologica', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: var(--sidebar-w);
+    min-height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 28px 0;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+  }
+
+  .sidebar-logo {
+    font-family: 'Dela Gothic One', sans-serif;
+    font-size: 22px;
+    color: var(--accent);
+    padding: 0 24px;
+    margin-bottom: 36px;
+  }
+
+  .nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 24px;
+    color: var(--muted);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+    user-select: none;
+  }
+
+  .nav-item:hover { color: var(--text); background: var(--accent-dim); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-dim); }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .sidebar-bottom {
+    padding: 0 24px;
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+  }
+
+  .user-info {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    word-break: break-all;
+  }
+
+  .logout-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 8px 14px;
+    border-radius: 2px;
+    font-family: 'Geologica', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.15s;
+  }
+
+  .logout-btn:hover { color: var(--error); border-color: var(--error); }
+
+  /* Main content */
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    padding: 40px;
+    min-height: 100vh;
+  }
+
+  /* Page header */
+  .page-header {
+    margin-bottom: 32px;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .page-title {
+    font-family: 'Dela Gothic One', sans-serif;
+    font-size: 26px;
+    margin-bottom: 4px;
+  }
+
+  .page-sub { font-size: 14px; color: var(--muted); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+    animation: fadeUp 0.4s ease 0.1s both;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 24px;
+  }
+
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  .stat-value { font-family: 'Dela Gothic One', sans-serif; font-size: 32px; color: var(--accent); }
+  .stat-hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  /* Section */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    margin-bottom: 20px;
+    animation: fadeUp 0.4s ease 0.2s both;
+  }
+
+  .section-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .section-title { font-size: 14px; font-weight: 500; }
+
+  .btn-sm {
+    padding: 8px 16px;
+    background: var(--accent);
+    color: #0d0f0e;
+    border: none;
+    border-radius: 2px;
+    font-family: 'Dela Gothic One', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .btn-sm:hover { opacity: 0.85; }
+
+  /* Empty state */
+  .empty-state {
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--muted);
+  }
+
+  .empty-icon { font-size: 36px; margin-bottom: 12px; }
+  .empty-title { font-size: 15px; color: var(--text); margin-bottom: 6px; }
+  .empty-text { font-size: 13px; line-height: 1.6; }
+
+  /* Properties grid */
+  .properties-grid {
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+  }
+
+  .property-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 18px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+
+  .property-card:hover { border-color: var(--accent); }
+
+  .property-name { font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+  .property-price { font-size: 13px; color: var(--accent); margin-bottom: 4px; }
+  .property-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* Bookings table */
+  .bookings-table { width: 100%; border-collapse: collapse; }
+
+  .bookings-table th {
+    text-align: left;
+    padding: 12px 24px;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+  }
+
+  .bookings-table td {
+    padding: 14px 24px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .bookings-table tr:last-child td { border-bottom: none; }
+  .bookings-table tr:hover td { background: var(--accent-dim); }
+
+  .status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .status-pending { background: rgba(255,184,79,0.15); color: var(--warning); }
+  .status-confirmed { background: var(--accent-dim); color: var(--accent); }
+  .status-cancelled { background: rgba(255,107,107,0.1); color: var(--error); }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .modal-overlay.show { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 36px;
+    width: 100%;
+    max-width: 420px;
+    transform: translateY(20px);
+    transition: transform 0.2s;
+  }
+
+  .modal-overlay.show .modal { transform: translateY(0); }
+
+  .modal-title {
+    font-family: 'Dela Gothic One', sans-serif;
+    font-size: 18px;
+    margin-bottom: 24px;
+  }
+
+  .modal-form { display: flex; flex-direction: column; gap: 14px; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+
+  label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  input, textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'Geologica', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  input:focus, textarea:focus { border-color: var(--accent); }
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+  textarea { resize: vertical; min-height: 70px; }
+
+  .modal-actions { display: flex; gap: 10px; margin-top: 8px; }
+
+  .btn-cancel {
+    flex: 1;
+    padding: 12px;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 2px;
+    font-family: 'Geologica', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-cancel:hover { border-color: var(--text); color: var(--text); }
+
+  .btn-primary {
+    flex: 2;
+    padding: 12px;
+    background: var(--accent);
+    color: #0d0f0e;
+    border: none;
+    border-radius: 2px;
+    font-family: 'Dela Gothic One', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Pages */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Loading */
+  .loading { padding: 32px 24px; text-align: center; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-logo">Broniq</div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="showPage('overview')">
+      <span class="nav-icon">◈</span> Обзор
+    </div>
+    <div class="nav-item" onclick="showPage('properties')">
+      <span class="nav-icon">⌂</span> Объекты
+    </div>
+    <div class="nav-item" onclick="showPage('bookings')">
+      <span class="nav-icon">◷</span> Бронирования
+    </div>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="user-info" id="userEmail">загрузка...</div>
+    <button class="logout-btn" onclick="handleLogout()">Выйти</button>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- OVERVIEW PAGE -->
+  <div class="page active" id="page-overview">
+    <div class="page-header">
+      <div class="page-title">Обзор</div>
+      <div class="page-sub">Добро пожаловать в Broniq</div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Объектов</div>
+        <div class="stat-value" id="stat-properties">—</div>
+        <div class="stat-hint">домиков и номеров</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Бронирований</div>
+        <div class="stat-value" id="stat-bookings">—</div>
+        <div class="stat-hint">всего за всё время</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Ожидают</div>
+        <div class="stat-value" id="stat-pending">—</div>
+        <div class="stat-hint">подтверждения</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">Последние бронирования</div>
+      </div>
+      <div id="recent-bookings-container">
+        <div class="loading">Загрузка...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROPERTIES PAGE -->
+  <div class="page" id="page-properties">
+    <div class="page-header">
+      <div class="page-title">Объекты</div>
+      <div class="page-sub">Управляйте вашими домиками, куполами и номерами</div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">Ваши объекты</div>
+        <button class="btn-sm" onclick="openAddProperty()">+ Добавить</button>
+      </div>
+      <div id="properties-container">
+        <div class="loading">Загрузка...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOOKINGS PAGE -->
+  <div class="page" id="page-bookings">
+    <div class="page-header">
+      <div class="page-title">Бронирования</div>
+      <div class="page-sub">Все заявки от гостей</div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">Все бронирования</div>
+      </div>
+      <div id="bookings-container">
+        <div class="loading">Загрузка...</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal: Add Property -->
+<div class="modal-overlay" id="propertyModal">
+  <div class="modal">
+    <div class="modal-title">Новый объект</div>
+    <div class="modal-form">
+      <div class="field">
+        <label>Название</label>
+        <input type="text" id="propName" placeholder="Купол №1" />
+      </div>
+      <div class="field">
+        <label>Описание</label>
+        <textarea id="propDesc" placeholder="Уютный купол с видом на горы..."></textarea>
+      </div>
+      <div class="field">
+        <label>Цена за ночь (₽)</label>
+        <input type="number" id="propPrice" placeholder="5000" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('propertyModal')">Отмена</button>
+        <button class="btn-primary" id="savePropBtn" onclick="saveProperty()">СОХРАНИТЬ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://itnkvsrsyjhowegkcfmi.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0bmt2c3JzeWpob3dlZ2tjZm1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMDAxODksImV4cCI6MjA5MDg3NjE4OX0.k7szA4lWUq9QQoxi40UMsvxjBgGFh8kGoZOHY4a2kPc';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let currentUser = null;
+  let properties = [];
+  let bookings = [];
+
+  // Init
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      window.location.href = 'broniq-auth.html';
+      return;
+    }
+    currentUser = session.user;
+    document.getElementById('userEmail').textContent = currentUser.email;
+    await loadData();
+  }
+
+  async function loadData() {
+    // Load properties
+    const { data: props } = await sb.from('properties').select('*').order('created_at', { ascending: false });
+    properties = props || [];
+
+    // Load bookings with property names
+    const { data: books } = await sb.from('bookings')
+      .select('*, properties(name)')
+      .in('property_id', properties.map(p => p.id))
+      .order('created_at', { ascending: false });
+    bookings = books || [];
+
+    updateStats();
+    renderProperties();
+    renderBookings();
+    renderRecentBookings();
+  }
+
+  function updateStats() {
+    document.getElementById('stat-properties').textContent = properties.length;
+    document.getElementById('stat-bookings').textContent = bookings.length;
+    document.getElementById('stat-pending').textContent = bookings.filter(b => b.status === 'pending').length;
+  }
+
+  // Navigation
+  function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    event.currentTarget.classList.add('active');
+  }
+
+  // Properties
+  function renderProperties() {
+    const container = document.getElementById('properties-container');
+    if (properties.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">⌂</div>
+          <div class="empty-title">Объектов пока нет</div>
+          <div class="empty-text">Добавьте ваш первый домик или номер чтобы начать принимать бронирования</div>
+        </div>`;
+      return;
+    }
+    container.innerHTML = `<div class="properties-grid">${
+      properties.map(p => `
+        <div class="property-card">
+          <div class="property-name">${p.name}</div>
+          <div class="property-price">${p.price_per_night.toLocaleString('ru')} ₽ / ночь</div>
+          <div class="property-desc">${p.description || 'Без описания'}</div>
+        </div>`).join('')
+    }</div>`;
+  }
+
+  function renderBookings() {
+    const container = document.getElementById('bookings-container');
+    if (bookings.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">◷</div>
+          <div class="empty-title">Бронирований пока нет</div>
+          <div class="empty-text">Здесь будут появляться заявки от гостей</div>
+        </div>`;
+      return;
+    }
+    container.innerHTML = `
+      <table class="bookings-table">
+        <thead>
+          <tr>
+            <th>Гость</th>
+            <th>Объект</th>
+            <th>Заезд</th>
+            <th>Выезд</th>
+            <th>Сумма</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody>${bookings.map(b => `
+          <tr>
+            <td>${b.guest_name}<br><span style="color:var(--muted);font-size:11px">${b.guest_phone}</span></td>
+            <td>${b.properties?.name || '—'}</td>
+            <td>${formatDate(b.check_in)}</td>
+            <td>${formatDate(b.check_out)}</td>
+            <td>${b.total_price.toLocaleString('ru')} ₽</td>
+            <td><span class="status-badge status-${b.status}">${statusLabel(b.status)}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function renderRecentBookings() {
+    const container = document.getElementById('recent-bookings-container');
+    const recent = bookings.slice(0, 5);
+    if (recent.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">◷</div>
+          <div class="empty-title">Бронирований пока нет</div>
+          <div class="empty-text">Добавьте объект и поделитесь ссылкой для бронирования с гостями</div>
+        </div>`;
+      return;
+    }
+    container.innerHTML = `
+      <table class="bookings-table">
+        <thead><tr><th>Гость</th><th>Объект</th><th>Даты</th><th>Сумма</th><th>Статус</th></tr></thead>
+        <tbody>${recent.map(b => `
+          <tr>
+            <td>${b.guest_name}</td>
+            <td>${b.properties?.name || '—'}</td>
+            <td>${formatDate(b.check_in)} → ${formatDate(b.check_out)}</td>
+            <td>${b.total_price.toLocaleString('ru')} ₽</td>
+            <td><span class="status-badge status-${b.status}">${statusLabel(b.status)}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  // Add property modal
+  function openAddProperty() {
+    document.getElementById('propName').value = '';
+    document.getElementById('propDesc').value = '';
+    document.getElementById('propPrice').value = '';
+    openModal('propertyModal');
+  }
+
+  async function saveProperty() {
+    const name = document.getElementById('propName').value.trim();
+    const desc = document.getElementById('propDesc').value.trim();
+    const price = parseInt(document.getElementById('propPrice').value);
+
+    if (!name || !price) { alert('Заполните название и цену'); return; }
+
+    const btn = document.getElementById('savePropBtn');
+    btn.disabled = true;
+    btn.textContent = 'Сохранение...';
+
+    const { error } = await sb.from('properties').insert({
+      user_id: currentUser.id,
+      name, description: desc, price_per_night: price
+    });
+
+    btn.disabled = false;
+    btn.textContent = 'СОХРАНИТЬ';
+
+    if (error) {
+      alert('Ошибка: ' + error.message);
+    } else {
+      closeModal('propertyModal');
+      await loadData();
+    }
+  }
+
+  // Modal helpers
+  function openModal(id) { document.getElementById(id).classList.add('show'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+  // Helpers
+  function formatDate(d) {
+    if (!d) return '—';
+    const date = new Date(d);
+    return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+  }
+
+  function statusLabel(s) {
+    return { pending: 'Ожидает', confirmed: 'Подтверждено', cancelled: 'Отменено' }[s] || s;
+  }
+
+  async function handleLogout() {
+    await sb.auth.signOut();
+    window.location.href = 'broniq-auth.html';
+  }
+
+  // Close modal on overlay click
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.classList.remove('show');
+    });
+  });
+
+  init();
+</script>
+</body>
+</html>

@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Broniq — Бронирование</title>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Geologica:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0f0e;
+    --surface: #151918;
+    --surface2: #1a1f1d;
+    --border: #232a27;
+    --accent: #4fffb0;
+    --accent-dim: rgba(79,255,176,0.10);
+    --text: #e8ede9;
+    --muted: #6b7a72;
+    --error: #ff6b6b;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Geologica', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+  }
+
+  .bg-noise {
+    position: fixed; inset: 0; z-index: 0;
+    background-image: radial-gradient(ellipse 60% 50% at 20% 80%, rgba(79,255,176,0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .grid-lines {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(79,255,176,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79,255,176,0.02) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+
+  /* Header */
+  .header {
+    position: relative; z-index: 1;
+    padding: 28px 40px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+  }
+
+  .header-logo {
+    font-family: 'Dela Gothic One', sans-serif;
+    font-size: 22px;
+    color: var(--accent);
+  }
+
+  .header-business {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* Content */
+  .content {
+    position: relative; z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 24px;
+  }
+
+  /* Hero */
+  .hero {
+    margin-bottom: 48px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .hero-title {
+    font-family: 'Dela Gothic One', sans-serif;
+    font-size: 36px;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+
+  .hero-sub { font-size: 15px; color: var(--muted); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Step indicator */
+  .steps {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 36px;
+    animation: fadeUp 0.5s ease 0.1s both;
+  }
+
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .step.active { color: var(--accent); }
+  .step.done { color: var(--muted); }
+
+  .step-num {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+
+  .step.active .step-num { background: var(--accent); color: #0d0f0e; border-color: var(--accent); }
+  .step.done .step-num { background: var(--border); }
+
+  .step-divider { flex: 1; height: 1px; background: var(--border); max-width: 40px; }
+
+  /* Pages */
+  .page { display: none; animation: fadeUp 0.3s ease both; }
+  .page.active { display: block; }
+
+  /* Property cards */
+  .properties-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .property-card {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 2px;
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .property-card:hover { border-color: rgba(79,255,176,0.4); }
+  .property-card.selected { border-color: var(--accent); background: var(--accent-dim); }
+
+  .prop-name { font-size: 16px; font-weight: 500; margin-bottom: 8px; }
+  .prop-price { font-family: 'Dela Gothic One', sans-serif; font-size: 20px; color: var(--accent); margin-bottom: 8px; }
+  .prop-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  .selected-badge {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 3px 10px;
+    background: var(--accent);
+    color: #0d0f0e;
+    font-size: 11px;
+    font-family: 'Dela Gothic One', sans-serif;
+    border-radius: 20px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .property-card.selected .selected-badge { opacity: 1; }
+
+  /* Date picker section */
+  .date-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+
+  .date-section-title {
+    font-size: 13px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 20px;
+  }
+
+  .date-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  input, textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'Geologica', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  input:focus, textarea:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--muted); }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.5);
+    cursor: pointer;
+  }
+
+  /* Price summary */
+  .price-summary {
+    background: var(--accent-dim);
+    border: 1px solid rgba(79,255,176,0.2);
+    border-radius: 2px;
+    padding: 20px 28px;
+    margin-bottom: 20px;
+    display: none;
+  }
+
+  .price-summary.show { display: block; }
+
+  .price-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .price-total {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 12px;
+    border-top: 1px solid rgba(79,255,176,0.2);
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  .price-total span:last-child {
+    font-family: 'Dela Gothic One', sans-serif;
+    color: var(--accent);
+  }
+
+  /* Guest form */
+  .guest-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+
+  .guest-form-title {
+    font-size: 13px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 20px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* Buttons */
+  .btn-row { display: flex; gap: 12px; margin-top: 8px; }
+
+  .btn-back {
+    padding: 14px 24px;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 2px;
+    font-family: 'Geologica', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-back:hover { border-color: var(--text); color: var(--text); }
+
+  .btn-next {
+    flex: 1;
+    padding: 14px;
+    background: var(--accent);
+    color: #0d0f0e;
+    border: none;
+    border-radius: 2px;
+    font-family: 'Dela Gothic One', sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .btn-next:hover { opacity: 0.88; }
+  .btn-next:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Success */
+  .success-screen {
+    text-align: center;
+    padding: 64px 24px;
+  }
+
+  .success-icon {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    border: 2px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 24px;
+  }
+
+  .success-title {
+    font-family: 'Dela Gothic One', sans-serif;
+    font-size: 28px;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .success-text { font-size: 15px; color: var(--muted); line-height: 1.7; max-width: 400px; margin: 0 auto 32px; }
+
+  .booking-details {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 24px;
+    max-width: 400px;
+    margin: 0 auto;
+    text-align: left;
+  }
+
+  .booking-detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  .booking-detail-row:last-child { border-bottom: none; }
+  .booking-detail-row span:first-child { color: var(--muted); }
+  .booking-detail-row span:last-child { font-weight: 500; }
+
+  /* Error msg */
+  .msg {
+    padding: 12px 14px;
+    border-radius: 2px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .msg.error { background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3); color: var(--error); display: block; }
+
+  /* Loading */
+  .loading { text-align: center; padding: 48px; color: var(--muted); font-size: 14px; }
+  .spinner-inline {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(13,15,14,0.3); border-top-color: #0d0f0e;
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+    vertical-align: middle; margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="bg-noise"></div>
+<div class="grid-lines"></div>
+
+<div class="header">
+  <div class="header-logo">Broniq</div>
+  <div class="header-business" id="businessName">Загрузка...</div>
+</div>
+
+<div class="content">
+
+  <div class="hero">
+    <div class="hero-title">Забронируйте<br>ваш отдых</div>
+    <div class="hero-sub">Выберите объект, укажите даты и оставьте заявку</div>
+  </div>
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step active" id="step1">
+      <div class="step-num">1</div>
+      <span>Объект</span>
+    </div>
+    <div class="step-divider"></div>
+    <div class="step" id="step2">
+      <div class="step-num">2</div>
+      <span>Даты</span>
+    </div>
+    <div class="step-divider"></div>
+    <div class="step" id="step3">
+      <div class="step-num">3</div>
+      <span>Данные</span>
+    </div>
+  </div>
+
+  <!-- PAGE 1: Select property -->
+  <div class="page active" id="page1">
+    <div id="error1" class="msg"></div>
+    <div id="properties-list">
+      <div class="loading">Загрузка объектов...</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-next" onclick="goToStep2()">ВЫБРАТЬ ДАТЫ →</button>
+    </div>
+  </div>
+
+  <!-- PAGE 2: Select dates -->
+  <div class="page" id="page2">
+    <div id="error2" class="msg"></div>
+
+    <div class="date-section">
+      <div class="date-section-title">Выберите даты</div>
+      <div class="date-inputs">
+        <div class="field">
+          <label>Дата заезда</label>
+          <input type="date" id="checkIn" onchange="calcPrice()" />
+        </div>
+        <div class="field">
+          <label>Дата выезда</label>
+          <input type="date" id="checkOut" onchange="calcPrice()" />
+        </div>
+      </div>
+    </div>
+
+    <div class="price-summary" id="priceSummary">
+      <div class="price-row">
+        <span id="nightsLabel">Ночей</span>
+        <span id="nightsCount">—</span>
+      </div>
+      <div class="price-row">
+        <span>Цена за ночь</span>
+        <span id="pricePerNight">—</span>
+      </div>
+      <div class="price-total">
+        <span>Итого</span>
+        <span id="totalPrice">—</span>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-back" onclick="goToStep(1)">← Назад</button>
+      <button class="btn-next" onclick="goToStep3()">ВВЕСТИ ДАННЫЕ →</button>
+    </div>
+  </div>
+
+  <!-- PAGE 3: Guest info -->
+  <div class="page" id="page3">
+    <div id="error3" class="msg"></div>
+
+    <div class="guest-form">
+      <div class="guest-form-title">Ваши данные</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Имя</label>
+          <input type="text" id="guestName" placeholder="Иван Иванов" />
+        </div>
+        <div class="field">
+          <label>Телефон</label>
+          <input type="tel" id="guestPhone" placeholder="+7 999 123 45 67" />
+        </div>
+      </div>
+    </div>
+
+    <div class="price-summary show">
+      <div class="price-row">
+        <span>Объект</span>
+        <span id="confirmProp">—</span>
+      </div>
+      <div class="price-row">
+        <span>Даты</span>
+        <span id="confirmDates">—</span>
+      </div>
+      <div class="price-total">
+        <span>К оплате</span>
+        <span id="confirmTotal">—</span>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-back" onclick="goToStep(2)">← Назад</button>
+      <button class="btn-next" id="submitBtn" onclick="submitBooking()">ОТПРАВИТЬ ЗАЯВКУ</button>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="page" id="pageSuccess">
+    <div class="success-screen">
+      <div class="success-icon">✓</div>
+      <div class="success-title">Заявка отправлена!</div>
+      <div class="success-text">Спасибо! Владелец свяжется с вами в ближайшее время для подтверждения бронирования.</div>
+      <div class="booking-details" id="bookingDetails"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://itnkvsrsyjhowegkcfmi.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0bmt2c3JzeWpob3dlZ2tjZm1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMDAxODksImV4cCI6MjA5MDg3NjE4OX0.k7szA4lWUq9QQoxi40UMsvxjBgGFh8kGoZOHY4a2kPc';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // Get user_id from URL: booking.html?owner=USER_ID
+  const params = new URLSearchParams(window.location.search);
+  const ownerId = params.get('owner');
+
+  let properties = [];
+  let selectedProperty = null;
+  let nights = 0;
+  let totalPrice = 0;
+
+  async function init() {
+    if (!ownerId) {
+      document.getElementById('properties-list').innerHTML = `
+        <div class="loading">⚠️ Ссылка неверная. Обратитесь к владельцу турбазы.</div>`;
+      return;
+    }
+
+    // Load properties for this owner
+    const { data, error } = await sb.from('properties')
+      .select('*')
+      .eq('user_id', ownerId)
+      .order('created_at');
+
+    if (error || !data || data.length === 0) {
+      document.getElementById('properties-list').innerHTML = `
+        <div class="loading">Объекты не найдены. Обратитесь к владельцу.</div>`;
+      return;
+    }
+
+    properties = data;
+
+    // Get business name from user metadata
+    document.getElementById('businessName').textContent = 'Бронирование';
+
+    renderProperties();
+  }
+
+  function renderProperties() {
+    document.getElementById('properties-list').innerHTML = `
+      <div class="properties-grid">
+        ${properties.map(p => `
+          <div class="property-card" id="prop-${p.id}" onclick="selectProperty('${p.id}')">
+            <div class="prop-name">${p.name}</div>
+            <div class="prop-price">${p.price_per_night.toLocaleString('ru')} ₽ / ночь</div>
+            <div class="prop-desc">${p.description || ''}</div>
+            <div class="selected-badge">✓ Выбрано</div>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  function selectProperty(id) {
+    selectedProperty = properties.find(p => p.id === id);
+    document.querySelectorAll('.property-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('prop-' + id).classList.add('selected');
+    document.getElementById('error1').className = 'msg';
+  }
+
+  function goToStep2() {
+    if (!selectedProperty) {
+      const el = document.getElementById('error1');
+      el.textContent = 'Выберите объект для бронирования';
+      el.className = 'msg error';
+      return;
+    }
+    goToStep(2);
+
+    // Set min date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('checkIn').min = today;
+    document.getElementById('checkOut').min = today;
+  }
+
+  function goToStep3() {
+    const checkIn = document.getElementById('checkIn').value;
+    const checkOut = document.getElementById('checkOut').value;
+
+    if (!checkIn || !checkOut) {
+      showError('error2', 'Выберите даты заезда и выезда');
+      return;
+    }
+
+    if (new Date(checkOut) <= new Date(checkIn)) {
+      showError('error2', 'Дата выезда должна быть позже даты заезда');
+      return;
+    }
+
+    if (nights < 1) {
+      showError('error2', 'Минимальное бронирование — 1 ночь');
+      return;
+    }
+
+    // Fill confirmation
+    document.getElementById('confirmProp').textContent = selectedProperty.name;
+    document.getElementById('confirmDates').textContent =
+      `${formatDate(checkIn)} → ${formatDate(checkOut)} (${nights} н.)`;
+    document.getElementById('confirmTotal').textContent =
+      totalPrice.toLocaleString('ru') + ' ₽';
+
+    goToStep(3);
+  }
+
+  function calcPrice() {
+    const checkIn = document.getElementById('checkIn').value;
+    const checkOut = document.getElementById('checkOut').value;
+
+    if (!checkIn || !checkOut) return;
+
+    const diff = (new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24);
+    nights = Math.max(0, diff);
+
+    if (nights > 0 && selectedProperty) {
+      totalPrice = nights * selectedProperty.price_per_night;
+      document.getElementById('nightsLabel').textContent = `${nights} ${nightWord(nights)}`;
+      document.getElementById('nightsCount').textContent = nights;
+      document.getElementById('pricePerNight').textContent =
+        selectedProperty.price_per_night.toLocaleString('ru') + ' ₽';
+      document.getElementById('totalPrice').textContent =
+        totalPrice.toLocaleString('ru') + ' ₽';
+      document.getElementById('priceSummary').classList.add('show');
+    } else {
+      document.getElementById('priceSummary').classList.remove('show');
+    }
+  }
+
+  async function submitBooking() {
+    const name = document.getElementById('guestName').value.trim();
+    const phone = document.getElementById('guestPhone').value.trim();
+    const checkIn = document.getElementById('checkIn').value;
+    const checkOut = document.getElementById('checkOut').value;
+
+    if (!name || !phone) {
+      showError('error3', 'Заполните имя и телефон');
+      return;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-inline"></span>Отправка...';
+
+    const { error } = await sb.from('bookings').insert({
+      property_id: selectedProperty.id,
+      guest_name: name,
+      guest_phone: phone,
+      check_in: checkIn,
+      check_out: checkOut,
+      total_price: totalPrice,
+      status: 'pending'
+    });
+
+    btn.disabled = false;
+    btn.textContent = 'ОТПРАВИТЬ ЗАЯВКУ';
+
+    if (error) {
+      showError('error3', 'Ошибка при отправке. Попробуйте снова.');
+      return;
+    }
+
+    // Show success
+    document.getElementById('bookingDetails').innerHTML = `
+      <div class="booking-detail-row"><span>Объект</span><span>${selectedProperty.name}</span></div>
+      <div class="booking-detail-row"><span>Заезд</span><span>${formatDate(checkIn)}</span></div>
+      <div class="booking-detail-row"><span>Выезд</span><span>${formatDate(checkOut)}</span></div>
+      <div class="booking-detail-row"><span>Гость</span><span>${name}</span></div>
+      <div class="booking-detail-row"><span>Телефон</span><span>${phone}</span></div>
+      <div class="booking-detail-row"><span>Сумма</span><span>${totalPrice.toLocaleString('ru')} ₽</span></div>
+    `;
+
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('pageSuccess').classList.add('active');
+    document.querySelector('.steps').style.display = 'none';
+  }
+
+  function goToStep(n) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page' + n).classList.add('active');
+
+    document.querySelectorAll('.step').forEach((s, i) => {
+      s.classList.remove('active', 'done');
+      if (i + 1 < n) s.classList.add('done');
+      if (i + 1 === n) s.classList.add('active');
+    });
+  }
+
+  function showError(id, text) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.className = 'msg error';
+  }
+
+  function formatDate(d) {
+    if (!d) return '—';
+    return new Date(d + 'T00:00:00').toLocaleDateString('ru-RU', {
+      day: 'numeric', month: 'long'
+    });
+  }
+
+  function nightWord(n) {
+    const mod10 = n % 10, mod100 = n % 100;
+    if (mod10 === 1 && mod100 !== 11) return 'ночь';
+    if ([2,3,4].includes(mod10) && ![12,13,14].includes(mod100)) return 'ночи';
+    return 'ночей';
+  }
+
+  init();
+</script>
+</body>
+</html>
